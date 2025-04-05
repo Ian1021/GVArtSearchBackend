@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-multipart
+pillow
+faiss-cpu
+clip-anytorch
+python-dotenv
+numpy<2.0
+torch==2.2.2
