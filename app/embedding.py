@@ -18,12 +18,29 @@ resnet_transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-def extract_embedding(image: Image.Image) -> np.ndarray:
+def extract_embedding(image: Image.Image, description: str = None) -> np.ndarray:
+    # Process image
     clip_img = preprocess_clip(image).unsqueeze(0).to(device)
     resnet_img = resnet_transform(image).unsqueeze(0)
 
     with torch.no_grad():
+        # Image embeddings
         clip_emb = clip_model.encode_image(clip_img).cpu().numpy().flatten()
         resnet_emb = resnet_model(resnet_img).squeeze().numpy().flatten()
 
-    return np.concatenate([clip_emb, resnet_emb]).astype("float32")
+        # Normalize
+        clip_emb = clip_emb / np.linalg.norm(clip_emb)
+        resnet_emb = resnet_emb / np.linalg.norm(resnet_emb)
+
+        combined_emb = np.concatenate([clip_emb, resnet_emb])
+
+        # Optional: add text embedding if description is provided
+        if description:
+            text_tokens = clip.tokenize([description]).to(device)
+            text_emb = clip_model.encode_text(text_tokens).cpu().numpy().flatten()
+            text_emb = text_emb / np.linalg.norm(text_emb)
+            combined_emb = np.concatenate([combined_emb, text_emb])
+        else:
+            text_emb = np.zeros(512)
+
+    return combined_emb.astype("float32")

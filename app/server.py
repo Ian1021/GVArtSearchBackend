@@ -1,9 +1,10 @@
-from typing import List
-from fastapi import FastAPI, UploadFile, File
+from typing import List, Optional
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from PIL import Image
 import io
+import traceback
 
 from app.embedding import extract_embedding
 from app.indexer import add_to_index, search_index, load_index, save_index
@@ -40,23 +41,32 @@ async def query_image(file: UploadFile = File(...)):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 @app.post("/index")
-async def index_images(files: List[UploadFile] = File(...)):
+async def index_images(
+    files: List[UploadFile] = File(...),
+    descriptions: Optional[List[str]] = Form(None)
+):
     try:
-        for file in files:
+        if descriptions is not None and not isinstance(descriptions, list):
+            descriptions = [descriptions]
+
+        for i, file in enumerate(files):
             print("Received an index request with file:", file.filename)
 
             img = Image.open(io.BytesIO(await file.read())).convert("RGB")
             print("Image opened and converted to RGB.")
 
-            emb = extract_embedding(img)
-            print("Extracted embedding from image:", emb)
+            desc = descriptions[i] if descriptions and i < len(descriptions) else None
+
+            emb = extract_embedding(img, description=desc)
+            print(f"Extracted embedding from image with description: {desc}")
 
             add_to_index(emb, file.filename)
             print(f"Added embedding for {file.filename} to index.")
-            
+
         save_index("data/art.index")
         print("Index saved to file.")
         return {"status": "indexed", "ids": [file.filename for file in files]}
     except Exception as e:
         print(f"Error during indexing: {str(e)}")
+        traceback.print_exc()
         return JSONResponse(status_code=500, content={"error": str(e)})
