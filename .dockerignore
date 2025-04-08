@@ -1,0 +1,9 @@
+node_modules
+Dockerfile
+.git
+.gitignore
+dist/**
+README.md
+.venv
+*.index
+*.id_map.pkl
