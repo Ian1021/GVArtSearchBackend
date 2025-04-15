@@ -6,7 +6,7 @@ from PIL import Image
 import io
 
 from app.embedding import extract_embedding
-from app.indexer import add_to_index, search_index, load_index, save_index
+from app.indexer import add_to_index, search_index, load_index, save_index, id_map
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,7 +40,7 @@ async def index_images(files: List[UploadFile] = File(...)):
             emb = extract_embedding(img)
             add_to_index(emb, file.filename)
         save_index()
-        print(f"Index saved. Now contains {len(search_index())} images.")
+        print(f"Index saved. Now contains {len(id_map)} images.")
         return {"status": "indexed", "ids": [file.filename for file in files]}
     except Exception as e:
         print(f"Error during indexing: {str(e)}")
