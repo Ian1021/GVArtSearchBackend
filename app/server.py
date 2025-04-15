@@ -10,7 +10,7 @@ from app.indexer import add_to_index, search_index, load_index, save_index
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    load_index("data/art.index")
+    load_index()
     print("Index loaded at startup")
     yield
 
@@ -39,8 +39,8 @@ async def index_images(files: List[UploadFile] = File(...)):
             img = Image.open(io.BytesIO(await file.read())).convert("RGB")
             emb = extract_embedding(img)
             add_to_index(emb, file.filename)
-        save_index("data/art.index")
-        print("Index saved.")
+        save_index()
+        print(f"Index saved. Now contains {len(search_index())} images.")
         return {"status": "indexed", "ids": [file.filename for file in files]}
     except Exception as e:
         print(f"Error during indexing: {str(e)}")
