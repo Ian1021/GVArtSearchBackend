@@ -19,11 +19,13 @@ IDMAP_FILE = "/tmp/id_map.pkl"
 
 
 def add_to_index(embedding: np.ndarray, filename: str):
-    if filename in id_map.values():
-        raise ValueError(f"Image '{filename}' is already indexed.")
+    image_id = os.path.splitext(filename)[0]  # Remove extension
+    if image_id in id_map.values():
+        print(f"Skipping already indexed image: {image_id}")
+        return
     index.add(np.expand_dims(embedding, axis=0))
     faiss_id = index.ntotal - 1
-    id_map[faiss_id] = filename
+    id_map[faiss_id] = image_id
 
 
 def search_index(query_embedding: np.ndarray, top_k: int = 6):
